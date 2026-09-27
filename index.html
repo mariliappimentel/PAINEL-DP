@@ -292,7 +292,7 @@ function beneficiosForDate(dstr){
 function renderBenefAccordion(name, items){
   const isOpen = openBenefEmployees.has(name);
   const doneCount = items.filter(x=>x.concluido).length;
-  const inner = isOpen ? items.slice().sort((a,b)=>new Date(a.data)-new Date(b.data)).map(it=>`<div class="benef-item ${it.concluido?'done':''}"><input type="checkbox" class="benef-check" data-id="${it.id}" ${it.concluido?'checked':''} ${canEdit()?'':'disabled'}><span>${it.item} — ${formatDateTime(it.data)}</span></div>`).join('') : '';
+  const inner = isOpen ? items.slice().sort((a,b)=>new Date(a.data)-new Date(b.data)).map(it=>`<div class="benef-item ${it.concluido?'done':''}"><input type="checkbox" class="benef-check" data-id="${it.id}" ${it.concluido?'checked':''} ${canEdit()?'':'disabled'}><span style="flex:1">${it.item} — ${formatDateTime(it.data)}</span>${canEdit()?`<button type="button" class="del-benef" data-id="${it.id}" title="Excluir este item">🗑</button>`:''}</div>`).join('') : '';
   return `<div class="benefgroup"><div class="benef-header benef-toggle" data-name="${name}"><span>👤 <b>${name}</b></span><span>${doneCount}/${items.length} concluído ${isOpen?'▲':'▼'}</span></div>${inner}</div>`;
 }
 function renderDayDetail(dstr){
@@ -432,6 +432,7 @@ document.addEventListener('click', e=>{
   if(e.target.classList.contains('calprev')){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendarPanel(); return; }
   if(e.target.classList.contains('calnext')){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendarPanel(); return; }
   if(e.target.closest('.benef-toggle')){ const name=e.target.closest('.benef-toggle').dataset.name; if(openBenefEmployees.has(name)) openBenefEmployees.delete(name); else openBenefEmployees.add(name); renderBeneficios(); renderCalendarPanel(); return; }
+  if(e.target.classList.contains('del-benef')){ if(confirm('Excluir este item de benefício?')) deleteItem('beneficios', e.target.dataset.id); return; }
   if(e.target.classList.contains('edit')){ editing[e.target.dataset.module]=e.target.dataset.id; renderModule(e.target.dataset.module); return; }
   if(e.target.classList.contains('cancel')){ const form=e.target.closest('form'); editing[form.dataset.module]=null; renderModule(form.dataset.module); renderCalendarPanel(); return; }
   if(e.target.classList.contains('del')){
@@ -550,4 +551,3 @@ document.addEventListener('change', e=>{
 </script>
 </body>
 </html>
-
