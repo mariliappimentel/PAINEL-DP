@@ -369,6 +369,10 @@ async function saveItem(key, data, id){
   }
 }
 async function deleteItem(key, id){
+  if(key==='admissoes'){
+    const related = (state.beneficios||[]).filter(b=>b.admissaoId===id);
+    for(const b of related){ await deleteItem('beneficios', b.id); }
+  }
   if(dbApi){ try{ await dbApi.doc(`${key}/${id}`).delete(); }catch(e){ console.error(e); alert('Não foi possível excluir: '+(e.message||e)); } }
   else { state[key]=state[key].filter(x=>x.id!==id); localSave(); renderModule(key); renderCalendarPanel(); }
 }
@@ -430,7 +434,11 @@ document.addEventListener('click', e=>{
   if(e.target.closest('.benef-toggle')){ const name=e.target.closest('.benef-toggle').dataset.name; if(openBenefEmployees.has(name)) openBenefEmployees.delete(name); else openBenefEmployees.add(name); renderBeneficios(); renderCalendarPanel(); return; }
   if(e.target.classList.contains('edit')){ editing[e.target.dataset.module]=e.target.dataset.id; renderModule(e.target.dataset.module); return; }
   if(e.target.classList.contains('cancel')){ const form=e.target.closest('form'); editing[form.dataset.module]=null; renderModule(form.dataset.module); renderCalendarPanel(); return; }
-  if(e.target.classList.contains('del')){ if(confirm('Excluir este registro?')) deleteItem(e.target.dataset.module, e.target.dataset.id); return; }
+  if(e.target.classList.contains('del')){
+    const msg = e.target.dataset.module==='admissoes' ? 'Excluir este registro? A ordem de pagamento de benefícios gerada para ele também será excluída.' : 'Excluir este registro?';
+    if(confirm(msg)) deleteItem(e.target.dataset.module, e.target.dataset.id);
+    return;
+  }
   if(e.target.classList.contains('filter-clear')){ const k=e.target.dataset.module; dateFilters[k]={from:'',to:''}; rerenderForModule(k); return; }
   if(e.target.classList.contains('benef')){ const row=state['admissoes'].find(x=>x.id===e.target.dataset.id); generateBenefitOrder(row); return; }
   if(e.target.classList.contains('tab')){
@@ -542,3 +550,4 @@ document.addEventListener('change', e=>{
 </script>
 </body>
 </html>
+
