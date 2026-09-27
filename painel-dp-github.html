@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel DP · Grupo Pmais</title>
+<style>
+:root{
+  --bg:#ffffff; --card:#ffffff; --text:#1c2430; --muted:#66707d; --border:#e5e8ec;
+  --accent:#3b5bfd; --accent-ink:#ffffff; --warn:#fff4d6; --warn-ink:#8a6300;
+  --urgent:#ffe1e1; --urgent-ink:#b3261e; --c-marilia:#8b5cf6; --c-lucas:#0ea5e9; --c-neutral:#9aa5b1;
+  --shadow:0 1px 3px rgba(20,20,40,.06), 0 1px 2px rgba(20,20,40,.04);
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#12151b; --card:#1b1f27; --text:#e8ebf0; --muted:#98a2b3; --border:#2a2f3a; --warn:#3a301a; --warn-ink:#e9c46a; --urgent:#3a1a1a; --urgent-ink:#ff8a80; }
+}
+:root[data-theme="dark"]{ --bg:#12151b; --card:#1b1f27; --text:#e8ebf0; --muted:#98a2b3; --border:#2a2f3a; --warn:#3a301a; --warn-ink:#e9c46a; --urgent:#3a1a1a; --urgent-ink:#ff8a80; }
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--border);padding:14px 16px;z-index:5;box-shadow:var(--shadow);}
+h1{margin:0 0 10px;font-size:18px;letter-spacing:-.01em;}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;}
+.tab{flex:0 0 auto;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px;white-space:nowrap;}
+.tab.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+main{max-width:920px;margin:0 auto;padding:16px;}
+.panel{display:none;}
+.panel.active{display:block;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:var(--shadow);}
+form.itemform{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+form.itemform label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px;flex:1 1 140px;}
+form.itemform label.chk{flex-direction:row;align-items:center;font-size:13px;color:var(--text);}
+form.itemform label.wide{flex-basis:100%;}
+input,select,textarea{padding:7px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;}
+textarea{resize:vertical;}
+.formbtns{display:flex;gap:8px;}
+button{cursor:pointer;border:none;border-radius:7px;padding:8px 12px;font-size:13px;}
+button[type=submit]{background:var(--accent);color:var(--accent-ink);}
+button.cancel{background:var(--border);color:var(--text);}
+.tablewrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+th{color:var(--muted);font-weight:600;font-size:12px;}
+tr.urgent td{background:var(--urgent);color:var(--urgent-ink);}
+tr.warn td{background:var(--warn);color:var(--warn-ink);}
+.rowbtns button{background:transparent;padding:2px 6px;font-size:14px;}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;color:#fff;font-weight:600;}
+.calitem{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border-radius:8px;margin-bottom:6px;background:var(--bg);}
+.calicon{font-size:17px;}
+.empty{color:var(--muted);font-size:13px;}
+.banner{background:var(--warn);color:var(--warn-ink);border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:12px;}
+h2{font-size:15px;margin:0 0 10px;}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:8px 0 12px;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.legenddot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.calnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:14px;text-transform:capitalize;}
+.calnav button{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:4px 10px;}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.dow{font-size:11px;color:var(--muted);text-align:center;padding:4px 0;}
+.calcell{min-height:52px;border:1px solid var(--border);border-radius:8px;padding:4px;font-size:11px;cursor:pointer;}
+.calcell.otherm{opacity:.35;}
+.calcell.today{border-color:var(--accent);border-width:2px;}
+.calcell.selected{background:#eef1ff;}
+.daynum{font-weight:600;font-size:12px;}
+.dots{display:flex;gap:2px;flex-wrap:wrap;margin-top:3px;align-items:center;}
+.dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;}
+.benefgroup{margin-bottom:4px;}
+.benef-header{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;}
+.benef-item{display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:13px;border-bottom:1px dashed var(--border);}
+.benef-item.done{opacity:.5;text-decoration:line-through;}
+.filterbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;}
+.filterbar label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px;}
+.loginwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.loginbox{max-width:340px;width:100%;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:var(--shadow);}
+.loginbox h2{margin-top:0;}
+.loginbox input{width:100%;margin-bottom:10px;}
+.loginbox button{width:100%;background:var(--accent);color:var(--accent-ink);padding:10px;font-size:14px;}
+.loginerr{color:var(--urgent-ink);font-size:12px;margin-top:6px;min-height:16px;}
+.userbadge{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:6px;}
+.userbadge button{background:transparent;color:var(--muted);text-decoration:underline;padding:0;font-size:12px;}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="loginScreen" class="loginwrap">
+  <div class="loginbox">
+    <h2>📋 Painel DP</h2>
+    <p style="color:var(--muted);font-size:13px;">Entre com seu e-mail e senha cadastrados.</p>
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="E-mail" required>
+      <input type="password" id="loginPass" placeholder="Senha" required>
+      <button type="submit">Entrar</button>
+      <div class="loginerr" id="loginErr"></div>
+    </form>
+  </div>
+</div>
+<div id="appRoot" style="display:none;">
+<header>
+  <h1>📋 Painel DP — Grupo Pmais</h1>
+  <div class="tabs" id="tabs"></div>
+  <div class="userbadge" id="userBadge"></div>
+</header>
+<main>
+  <div id="banner"></div>
+  <div id="panels"></div>
+</main>
+</div>
+<script>
+const PEOPLE = ['Marília','Lucas'];
+const MODULES = [
+ {key:'admissoes', label:'Admissões', icon:'📥', fields:[
+   {name:'colaborador', label:'Colaborador', type:'text'},
+   {name:'dataAdmissao', label:'Data Admissão', type:'date'},
+   {name:'dataAtendimento', label:'Data/Hora Atendimento', type:'datetime-local'},
+   {name:'cartaoIfood', label:'Cartão iFood solicitado', type:'checkbox'},
+   {name:'s2200', label:'S-2200 enviado', type:'checkbox'},
+   {name:'obsBeneficios', label:'Observação de Benefícios', type:'textarea'},
+   {name:'responsavel', label:'Responsável', type:'select', options:PEOPLE}
+ ], calendarFields:['dataAtendimento'], filterField:'dataAdmissao', filterLabel:'Data de Admissão'},
+ {key:'desligamentos', label:'Desligamentos', icon:'📤', fields:[
+   {name:'colaborador', label:'Colaborador', type:'text'},
+   {name:'dataDesligamento', label:'Data Desligamento', type:'date'},
+   {name:'agendamentoHomologacao', label:'Agendamento Homologação', type:'datetime-local'},
+   {name:'prazoHomologacao', label:'Prazo Homologação', type:'date'},
+   {name:'status', label:'Status', type:'select', options:['Pendente','Concluído']},
+   {name:'responsavel', label:'Responsável', type:'select', options:PEOPLE}
+ ], calendarFields:['agendamentoHomologacao','prazoHomologacao']},
+ {key:'afastamentos', label:'Afastamentos', icon:'🏥', fields:[
+   {name:'colaborador', label:'Colaborador', type:'text'},
+   {name:'tipo', label:'Tipo', type:'text'},
+   {name:'dataInicio', label:'Início', type:'date'},
+   {name:'previsaoRetorno', label:'Previsão Retorno', type:'date'},
+   {name:'ultimoContato', label:'Último Contato', type:'date'},
+   {name:'responsavel', label:'Responsável', type:'select', options:PEOPLE}
+ ], calendarFields:['previsaoRetorno']},
+ {key:'sst', label:'Saúde e Segurança', icon:'🦺', fields:[
+   {name:'colaborador', label:'Colaborador', type:'text'},
+   {name:'tipoAso', label:'Tipo de ASO', type:'text'},
+   {name:'dataValidade', label:'Validade', type:'date'},
+   {name:'status', label:'Status', type:'select', options:['Válido','Vencendo','Vencido']},
+   {name:'responsavel', label:'Responsável', type:'select', options:PEOPLE}
+ ], calendarFields:['dataValidade']},
+ {key:'juridico', label:'Jurídico', icon:'⚖️', fields:[
+   {name:'processo', label:'Processo', type:'text'},
+   {name:'dataAudiencia', label:'Data Audiência', type:'date'},
+   {name:'documentos', label:'Documentos Pendentes', type:'text'},
+   {name:'s2500', label:'S-2500 enviado', type:'checkbox'},
+   {name:'responsavel', label:'Responsável', type:'select', options:PEOPLE}
+ ], calendarFields:['dataAudiencia']},
+ {key:'tarefas', label:'Tarefas', icon:'✅', fields:[
+   {name:'titulo', label:'Tarefa', type:'text'},
+   {name:'modulo', label:'Módulo', type:'select', options:['Admissões','Desligamentos','Afastamentos','SST','Jurídico','Geral']},
+   {name:'prazo', label:'Prazo', type:'date'},
+   {name:'status', label:'Status', type:'select', options:['Pendente','Em andamento','Concluída']},
+   {name:'responsavel', label:'Responsável', type:'select', options:PEOPLE}
+ ], calendarFields:['prazo']},
+ {key:'eventos', label:'Eventos/Pagamentos', icon:'💰', fields:[
+   {name:'titulo', label:'Evento/Tarefa', type:'text'},
+   {name:'data', label:'Data', type:'date'},
+   {name:'tipo', label:'Tipo', type:'select', options:['Reunião','Pagamento','Prazo Legal','Outro']},
+   {name:'responsavel', label:'Responsável', type:'select', options:PEOPLE}
+ ], calendarFields:['data']}
+];
+let state = {}; MODULES.forEach(m=>state[m.key]=[]); state.beneficios=[];
+let editing = {}; MODULES.forEach(m=>editing[m.key]=null);
+let dbApi = null;
+let currentUser = null;
+function canEdit(){ return !!currentUser && currentUser.role !== 'viewer'; }
+function isAdmin(){ return !!currentUser && currentUser.role === 'admin'; }
+let calYear, calMonth, selectedDate=null;
+let openBenefEmployees = new Set();
+let dateFilters = { admissoes:{from:'',to:''}, beneficios:{from:'',to:''} };
+{ const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); }
+
+function daysUntil(d){ if(!d) return null; const t=new Date(new Date().toDateString()); const dt=new Date(d); const dtOnly=new Date(dt.toDateString()); return Math.round((dtOnly-t)/86400000); }
+function urgencyClass(days){ if(days===null) return ''; if(days<=3) return 'urgent'; if(days<=7) return 'warn'; return ''; }
+function formatDateTime(d){ if(!d) return '—'; const [datePart,timePart]=d.split('T'); const [y,m,day]=datePart.split('-'); return timePart? `${day}/${m}/${y} ${timePart}` : `${day}/${m}/${y}`; }
+function moduleUrgency(mod, r){ if(!mod.calendarFields) return null; let min=null; mod.calendarFields.forEach(fn=>{ const d=daysUntil(r[fn]); if(d!==null && (min===null||d<min)) min=d; }); return min; }
+function toISODate(d){ return d.toISOString().slice(0,10); }
+function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function dateKey(d){ return d ? d.split('T')[0] : null; }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function ymd(y,m,day){ return `${y}-${pad2(m+1)}-${pad2(day)}`; }
+function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
+function personColor(name){ if(name==='Marília') return 'var(--c-marilia)'; if(name==='Lucas') return 'var(--c-lucas)'; return 'var(--c-neutral)'; }
+function renderFilterBar(key, label){
+  const f = dateFilters[key];
+  return `<div class="filterbar"><label>${label} de<input type="date" class="filter-from" data-module="${key}" value="${f.from}"></label><label>até<input type="date" class="filter-to" data-module="${key}" value="${f.to}"></label><button type="button" class="filter-clear cancel" data-module="${key}">Limpar</button></div>`;
+}
+function monthlyAnniversaryMatches(startDateStr, dstr){
+  if(!startDateStr) return false;
+  const start = new Date(startDateStr+'T00:00:00'), d = new Date(dstr+'T00:00:00');
+  if(d < start || d.getDate() !== start.getDate()) return false;
+  const monthsDiff = (d.getFullYear()-start.getFullYear())*12 + (d.getMonth()-start.getMonth());
+  return monthsDiff >= 1;
+}
+function returnReminderMatches(previsaoRetorno, dstr){
+  if(!previsaoRetorno) return false;
+  const p = new Date(previsaoRetorno+'T00:00:00');
+  return toISODate(addDays(p,-10)) === dstr;
+}
+function afastamentoExtraReminders(dstr){
+  let items=[];
+  (state.afastamentos||[]).forEach(r=>{
+    const nome = r.colaborador || '(colaborador)';
+    if(!r.previsaoRetorno && r.dataInicio && monthlyAnniversaryMatches(r.dataInicio, dstr)){
+      items.push({icon:'📞', modLabel:'Afastamentos', title:`Contato mensal — ${nome} (sem previsão de retorno)`, responsavel:r.responsavel||null, time:dstr});
+    }
+    if(r.previsaoRetorno && returnReminderMatches(r.previsaoRetorno, dstr)){
+      items.push({icon:'📋', modLabel:'Afastamentos', title:`Verificar necessidade de novo atestado — ${nome}`, responsavel:r.responsavel||null, time:dstr});
+    }
+  });
+  return items;
+}
+
+function fieldInputHTML(f, val){
+  if(f.type==='checkbox') return `<label class="chk"><input type="checkbox" name="${f.name}" ${val?'checked':''}> ${f.label}</label>`;
+  if(f.type==='textarea') return `<label class="wide">${f.label}<textarea name="${f.name}" rows="2">${val||''}</textarea></label>`;
+  if(f.type==='select') return `<label>${f.label}<select name="${f.name}">${f.options.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')}</select></label>`;
+  return `<label>${f.label}<input type="${f.type}" name="${f.name}" value="${val||''}"></label>`;
+}
+function renderForm(mod){
+  if(!canEdit()) return '';
+  const id = editing[mod.key];
+  const data = id ? (state[mod.key].find(x=>x.id===id)||{}) : {};
+  return `<form class="itemform" data-module="${mod.key}" data-id="${id||''}">
+    ${mod.fields.map(f=>fieldInputHTML(f, data[f.name])).join('')}
+    <div class="formbtns"><button type="submit">${id?'Salvar':'Adicionar'}</button>${id?'<button type="button" class="cancel">Cancelar</button>':''}</div>
+  </form>`;
+}
+function renderTable(mod){
+  let rows = (state[mod.key]||[]).slice();
+  if(mod.filterField){
+    const f = dateFilters[mod.key];
+    if(f.from) rows = rows.filter(r=> r[mod.filterField] && r[mod.filterField] >= f.from);
+    if(f.to) rows = rows.filter(r=> r[mod.filterField] && r[mod.filterField] <= f.to);
+  }
+  rows.sort((a,b)=>{ const ua=moduleUrgency(mod,a), ub=moduleUrgency(mod,b); if(ua===null&&ub===null) return 0; if(ua===null) return 1; if(ub===null) return -1; return ua-ub; });
+  return `<div class="tablewrap"><table><thead><tr>${mod.fields.map(f=>`<th>${f.label}</th>`).join('')}<th></th></tr></thead><tbody>
+    ${rows.length? rows.map(r=>{
+      const cls = urgencyClass(moduleUrgency(mod,r));
+      const cells = mod.fields.map(f=>{
+        let val;
+        if(f.name==='responsavel') val = r[f.name] ? `<span class="pill" style="background:${personColor(r[f.name])}">${r[f.name]}</span>` : '—';
+        else if(f.type==='checkbox') val = r[f.name] ? '✅' : '—';
+        else if(f.type==='date'||f.type==='datetime-local') val = formatDateTime(r[f.name]);
+        else val = r[f.name] || '—';
+        return `<td>${val}</td>`;
+      }).join('');
+      const hasBenef = mod.key==='admissoes' && (state.beneficios||[]).some(b=>b.admissaoId===r.id);
+      const benefBtn = (canEdit() && mod.key==='admissoes') ? `<button class="benef" data-module="${mod.key}" data-id="${r.id}" title="${hasBenef?'Ordem de pagamento já gerada':'Gerar ordem de pagamento de benefícios'}">${hasBenef?'✔️':'💳'}</button>` : '';
+      const rowActions = canEdit() ? `${benefBtn}<button class="edit" data-module="${mod.key}" data-id="${r.id}">✎</button><button class="del" data-module="${mod.key}" data-id="${r.id}">🗑</button>` : '';
+      return `<tr class="${cls}">${cells}<td class="rowbtns">${rowActions}</td></tr>`;
+    }).join('') : `<tr><td colspan="${mod.fields.length+1}" class="empty">Nenhum registro ainda.</td></tr>`}
+  </tbody></table></div>`;
+}
+function renderModule(key){
+  const mod = MODULES.find(m=>m.key===key);
+  const el = document.getElementById('panel-'+key);
+  if(!el) return;
+  el.innerHTML = `<div class="card"><h2>${mod.icon} ${mod.label}</h2>${mod.filterField?renderFilterBar(mod.key, mod.filterLabel):''}${renderForm(mod)}</div><div class="card" id="tablewrap-${mod.key}">${renderTable(mod)}</div>`;
+}
+function refreshTable(key){
+  const mod = MODULES.find(m=>m.key===key);
+  const el = document.getElementById('tablewrap-'+key);
+  if(el) el.innerHTML = renderTable(mod);
+}
+
+function normalItemsForDate(dstr){
+  let items=[];
+  MODULES.forEach(mod=>{
+    if(!mod.calendarFields) return;
+    (state[mod.key]||[]).forEach(r=>{
+      mod.calendarFields.forEach(fn=>{
+        if(dateKey(r[fn])!==dstr) return;
+        const fLabel = mod.fields.find(f=>f.name===fn).label;
+        const suffix = mod.calendarFields.length>1 ? ` — ${fLabel}` : '';
+        items.push({icon:mod.icon, modLabel:mod.label, title:(r[mod.fields[0].name]||'(sem título)')+suffix, responsavel:r.responsavel||null, time:r[fn]});
+      });
+    });
+  });
+  return items.concat(afastamentoExtraReminders(dstr));
+}
+function beneficiosForDate(dstr){
+  const items = (state.beneficios||[]).filter(b=>dateKey(b.data)===dstr);
+  const groups={};
+  items.forEach(b=>{ (groups[b.colaborador]=groups[b.colaborador]||[]).push(b); });
+  return groups;
+}
+function renderBenefAccordion(name, items){
+  const isOpen = openBenefEmployees.has(name);
+  const doneCount = items.filter(x=>x.concluido).length;
+  const inner = isOpen ? items.slice().sort((a,b)=>new Date(a.data)-new Date(b.data)).map(it=>`<div class="benef-item ${it.concluido?'done':''}"><input type="checkbox" class="benef-check" data-id="${it.id}" ${it.concluido?'checked':''} ${canEdit()?'':'disabled'}><span>${it.item} — ${formatDateTime(it.data)}</span></div>`).join('') : '';
+  return `<div class="benefgroup"><div class="benef-header benef-toggle" data-name="${name}"><span>👤 <b>${name}</b></span><span>${doneCount}/${items.length} concluído ${isOpen?'▲':'▼'}</span></div>${inner}</div>`;
+}
+function renderDayDetail(dstr){
+  const normal = normalItemsForDate(dstr);
+  const benefGroups = beneficiosForDate(dstr);
+  let html='';
+  if(normal.length) html += normal.map(it=>`<div class="calitem" style="border-left:4px solid ${personColor(it.responsavel)}"><span class="calicon">${it.icon}</span><div><b>${it.title}</b><br><small>${it.modLabel}${it.responsavel?(' · '+it.responsavel):''} · ${formatDateTime(it.time)}</small></div></div>`).join('');
+  const names = Object.keys(benefGroups);
+  if(names.length) html += names.map(n=>renderBenefAccordion(n, benefGroups[n])).join('');
+  return html || '<p class="empty">Nada agendado neste dia.</p>';
+}
+function renderCalendarPanel(){
+  const el = document.getElementById('panel-calendario');
+  if(!el) return;
+  const first = new Date(calYear, calMonth, 1);
+  const startWeekday = first.getDay();
+  const totalDays = daysInMonth(calYear, calMonth);
+  const prevMonthDays = daysInMonth(calYear, calMonth===0?11:calMonth-1);
+  const cells=[];
+  for(let i=0;i<42;i++){
+    let dnum, dY=calYear, dM=calMonth, other=false;
+    const idx = i - startWeekday;
+    if(idx<0){ dnum = prevMonthDays+idx+1; dM = calMonth===0?11:calMonth-1; dY = calMonth===0?calYear-1:calYear; other=true; }
+    else if(idx>=totalDays){ dnum = idx-totalDays+1; dM = calMonth===11?0:calMonth+1; dY = calMonth===11?calYear+1:calYear; other=true; }
+    else { dnum = idx+1; }
+    cells.push({dstr:ymd(dY,dM,dnum), dnum, other});
+  }
+  const n=new Date(); const todayStr = ymd(n.getFullYear(), n.getMonth(), n.getDate());
+  const dows=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const gridHtml = `<div class="calnav"><button class="calprev">‹</button><b>${first.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</b><button class="calnext">›</button></div>
+  <div class="legend"><span><i class="legenddot" style="background:var(--c-marilia)"></i>Marília</span><span><i class="legenddot" style="background:var(--c-lucas)"></i>Lucas</span><span><i class="legenddot" style="background:var(--c-neutral)"></i>Outros/Benefícios</span></div>
+  <div class="calgrid">${dows.map(d=>`<div class="dow">${d}</div>`).join('')}
+  ${cells.map(c=>{
+    const normal = normalItemsForDate(c.dstr);
+    const benefGroups = beneficiosForDate(c.dstr);
+    const dotList = normal.map(it=>personColor(it.responsavel)).concat(Object.keys(benefGroups).map(()=>'var(--c-neutral)'));
+    const cls=['calcell']; if(c.other) cls.push('otherm'); if(c.dstr===todayStr) cls.push('today'); if(c.dstr===selectedDate) cls.push('selected');
+    return `<div class="${cls.join(' ')}" data-date="${c.dstr}"><div class="daynum">${c.dnum}</div><div class="dots">${dotList.slice(0,4).map(col=>`<span class="dot" style="background:${col}"></span>`).join('')}${dotList.length>4?`<small>+${dotList.length-4}</small>`:''}</div></div>`;
+  }).join('')}
+  </div>`;
+  const detailHtml = selectedDate ? renderDayDetail(selectedDate) : '<p class="empty">Clique em um dia para ver os detalhes.</p>';
+  el.innerHTML = `<div class="card">${gridHtml}</div><div class="card"><h2>📌 ${selectedDate?formatDateTime(selectedDate):'Detalhes do dia'}</h2>${detailHtml}</div><div class="card"><h2>➕ Adicionar evento, reunião ou tarefa</h2>${renderForm(MODULES.find(m=>m.key==='eventos'))}</div>`;
+}
+function beneficiosGroupsHtml(){
+  let items = (state.beneficios||[]).slice();
+  const f = dateFilters.beneficios;
+  if(f.from) items = items.filter(b=> b.dataAdmissao && b.dataAdmissao >= f.from);
+  if(f.to) items = items.filter(b=> b.dataAdmissao && b.dataAdmissao <= f.to);
+  const groups={};
+  items.forEach(b=>{ (groups[b.colaborador]=groups[b.colaborador]||[]).push(b); });
+  const names = Object.keys(groups);
+  return names.length? names.map(n=>renderBenefAccordion(n, groups[n])).join('') : '<p class="empty">Nenhum resultado para o filtro aplicado.</p>';
+}
+function renderBeneficios(){
+  const el = document.getElementById('panel-beneficios');
+  if(!el) return;
+  el.innerHTML = `<div class="card"><h2>💳 Benefícios por colaborador</h2>${renderFilterBar('beneficios','Data de Admissão')}<div id="benef-groups">${beneficiosGroupsHtml()}</div></div>`;
+}
+function refreshBeneficiosGroups(){
+  const el = document.getElementById('benef-groups');
+  if(el) el.innerHTML = beneficiosGroupsHtml();
+}
+function renderAll(){ MODULES.forEach(m=>renderModule(m.key)); renderCalendarPanel(); renderBeneficios(); }
+
+function localLoad(){ try{ const raw=localStorage.getItem('painel-dp-data'); if(raw) state=JSON.parse(raw); }catch(e){} }
+function localSave(){ try{ localStorage.setItem('painel-dp-data', JSON.stringify(state)); }catch(e){} }
+
+async function saveItem(key, data, id){
+  if(dbApi){ const docId = id || crypto.randomUUID(); try{ await dbApi.doc(`${key}/${docId}`).set(data); }catch(e){ console.error(e); } }
+  else {
+    if(id){ const i=state[key].findIndex(x=>x.id===id); if(i>-1) state[key][i]={id,...data}; }
+    else { state[key].push({id:crypto.randomUUID(), ...data}); }
+    localSave(); renderModule(key); renderCalendarPanel();
+  }
+}
+async function deleteItem(key, id){
+  if(dbApi){ try{ await dbApi.doc(`${key}/${id}`).delete(); }catch(e){ console.error(e); } }
+  else { state[key]=state[key].filter(x=>x.id!==id); localSave(); renderModule(key); renderCalendarPanel(); }
+}
+async function addBeneficio(item){
+  if(dbApi){ const id=crypto.randomUUID(); try{ await dbApi.doc(`beneficios/${id}`).set(item); }catch(e){ console.error(e); } }
+  else { state.beneficios.push({id:crypto.randomUUID(), ...item}); localSave(); renderBeneficios(); renderCalendarPanel(); }
+}
+async function saveBeneficio(id, patch){
+  if(dbApi){ try{ await dbApi.doc(`beneficios/${id}`).update(patch); }catch(e){ console.error(e); } }
+  else { const it=(state.beneficios||[]).find(x=>x.id===id); if(it) Object.assign(it,patch); localSave(); renderBeneficios(); renderCalendarPanel(); }
+}
+function generateBenefitOrder(row){
+  if(!row || !row.dataAdmissao){ alert('Preencha a Data de Admissão deste colaborador antes de gerar a ordem de pagamento.'); return; }
+  const start = new Date(row.dataAdmissao+'T00:00:00');
+  const lastDay = new Date(start.getFullYear(), start.getMonth()+1, 0).getDate();
+  const totalDaysInMonth = lastDay - start.getDate() + 1;
+  const remaining = Math.max(totalDaysInMonth - 8, 0);
+  const stages = [
+    {label:'3 dias', date: toISODate(start)},
+    {label:'+5 dias', date: toISODate(addDays(start,3))},
+    {label:`Restante do mês (${remaining} dias)`, date: toISODate(addDays(start,8))}
+  ];
+  const nome = row.colaborador || '(colaborador)';
+  const resp = row.responsavel || PEOPLE[0];
+  stages.forEach(st=>{ ['Alimentação','Transporte'].forEach(tipo=>{ addBeneficio({colaborador:nome, item:`${tipo} — ${st.label}`, data:st.date, concluido:false, responsavel:resp, admissaoId:row.id, dataAdmissao:row.dataAdmissao}); }); });
+  openBenefEmployees.add(nome);
+  alert(`Ordem de pagamento gerada para ${nome}: 6 itens (Alimentação e Transporte em 3 etapas). Marque cada um como concluído na aba Benefícios ou no calendário, para não esquecer nenhum.`);
+}
+
+document.addEventListener('submit', e=>{
+  if(!e.target.classList.contains('itemform')) return;
+  e.preventDefault();
+  const form=e.target, key=form.dataset.module, id=form.dataset.id||null;
+  const mod = MODULES.find(m=>m.key===key);
+  const data={};
+  mod.fields.forEach(f=>{ if(f.type==='checkbox') data[f.name]=form.elements[f.name].checked; else data[f.name]=form.elements[f.name].value; });
+  saveItem(key, data, id);
+  editing[key]=null;
+});
+function rerenderForModule(key){ if(key==='beneficios') renderBeneficios(); else renderModule(key); }
+function handleFilterEvent(e){
+  if(e.target.classList.contains('filter-from')){ dateFilters[e.target.dataset.module].from = e.target.value; e.target.dataset.module==='beneficios'?refreshBeneficiosGroups():refreshTable(e.target.dataset.module); }
+  else if(e.target.classList.contains('filter-to')){ dateFilters[e.target.dataset.module].to = e.target.value; e.target.dataset.module==='beneficios'?refreshBeneficiosGroups():refreshTable(e.target.dataset.module); }
+}
+document.addEventListener('input', handleFilterEvent);
+document.addEventListener('change', e=>{
+  if(e.target.classList.contains('benef-check')){ saveBeneficio(e.target.dataset.id, {concluido:e.target.checked}); return; }
+  handleFilterEvent(e);
+});
+document.addEventListener('click', e=>{
+  const cell = e.target.closest('.calcell');
+  if(cell){ selectedDate=cell.dataset.date; renderCalendarPanel(); return; }
+  if(e.target.classList.contains('calprev')){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendarPanel(); return; }
+  if(e.target.classList.contains('calnext')){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendarPanel(); return; }
+  if(e.target.closest('.benef-toggle')){ const name=e.target.closest('.benef-toggle').dataset.name; if(openBenefEmployees.has(name)) openBenefEmployees.delete(name); else openBenefEmployees.add(name); renderBeneficios(); renderCalendarPanel(); return; }
+  if(e.target.classList.contains('edit')){ editing[e.target.dataset.module]=e.target.dataset.id; renderModule(e.target.dataset.module); return; }
+  if(e.target.classList.contains('cancel')){ const form=e.target.closest('form'); editing[form.dataset.module]=null; renderModule(form.dataset.module); renderCalendarPanel(); return; }
+  if(e.target.classList.contains('del')){ if(confirm('Excluir este registro?')) deleteItem(e.target.dataset.module, e.target.dataset.id); return; }
+  if(e.target.classList.contains('filter-clear')){ const k=e.target.dataset.module; dateFilters[k]={from:'',to:''}; rerenderForModule(k); return; }
+  if(e.target.classList.contains('benef')){ const row=state['admissoes'].find(x=>x.id===e.target.dataset.id); generateBenefitOrder(row); return; }
+  if(e.target.classList.contains('tab')){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById('panel-'+e.target.dataset.key).classList.add('active');
+  }
+});
+
+function buildLayout(){
+  const tabsEl = document.getElementById('tabs');
+  const panelsEl = document.getElementById('panels');
+  const all = [{key:'calendario', label:'Calendário', icon:'🗓️'}, {key:'beneficios', label:'Benefícios', icon:'💳'}, ...MODULES];
+  if(isAdmin()) all.push({key:'usuarios', label:'Usuários', icon:'🔑'});
+  tabsEl.innerHTML = all.map((m,i)=>`<button class="tab${i===0?' active':''}" data-key="${m.key}">${m.icon} ${m.label}</button>`).join('');
+  panelsEl.innerHTML = all.map((m,i)=>`<div class="panel${i===0?' active':''}" id="panel-${m.key}"></div>`).join('');
+}
+async function renderUsuarios(){
+  const el = document.getElementById('panel-usuarios');
+  if(!el || !isAdmin()) return;
+  const {data, error} = await sb.from('profiles').select('id,nome,role');
+  if(error){ el.innerHTML = `<div class="card"><p class="empty">Não foi possível carregar os usuários.</p></div>`; return; }
+  el.innerHTML = `<div class="card"><h2>🔑 Usuários e permissões</h2><div class="tablewrap"><table><thead><tr><th>Nome</th><th>Permissão</th></tr></thead><tbody>
+    ${data.map(u=>`<tr><td>${u.nome||'(sem nome)'}</td><td><select class="rolesel" data-id="${u.id}"><option value="admin" ${u.role==='admin'?'selected':''}>Administrador (mestre)</option><option value="member" ${u.role==='member'?'selected':''}>Membro (edita)</option><option value="viewer" ${u.role==='viewer'?'selected':''}>Visualizador (só leitura)</option></select></td></tr>`).join('')}
+  </tbody></table></div><p class="empty" style="margin-top:8px;">Como administradora, você define aqui o que cada pessoa pode ver e alterar no painel.</p></div>`;
+}
+
+const SUPABASE_URL = 'https://jdicnhikfkppfchdubhx.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_wM6b_flmfxBAoZJ5Pud6hQ_lPInDkUh';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function makeDbAdapter(){
+  return {
+    collection(table){
+      return { onSnapshot(cb){
+        async function load(){ const {data,error} = await sb.from(table).select('id,data'); if(!error) cb(data.map(r=>({id:r.id, data:()=>r.data}))); }
+        load();
+        sb.channel('realtime:'+table).on('postgres_changes', {event:'*', schema:'public', table}, load).subscribe();
+      }};
+    },
+    doc(path){
+      const [table,id] = path.split('/');
+      return {
+        async set(data){ await sb.from(table).upsert({id, data}); },
+        async update(patch){ const {data:row} = await sb.from(table).select('data').eq('id',id).single(); await sb.from(table).update({data:{...(row?row.data:{}), ...patch}}).eq('id',id); },
+        async delete(){ await sb.from(table).delete().eq('id',id); }
+      };
+    }
+  };
+}
+async function startApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appRoot').style.display='block';
+  document.getElementById('userBadge').innerHTML = `${currentUser.nome||''} · ${currentUser.role==='admin'?'Administrador(a)':currentUser.role==='viewer'?'Visualização':'Membro'} <button id="logoutBtn">Sair</button>`;
+  document.getElementById('logoutBtn').onclick = async ()=>{ await sb.auth.signOut(); location.reload(); };
+  dbApi = makeDbAdapter();
+  buildLayout();
+  MODULES.forEach(m=>{
+    dbApi.collection(m.key).onSnapshot(docs=>{
+      state[m.key] = (docs||[]).map(d=> d && d.data ? {id:d.id, ...d.data()} : d);
+      renderModule(m.key); renderCalendarPanel();
+    });
+  });
+  dbApi.collection('beneficios').onSnapshot(docs=>{
+    state.beneficios = (docs||[]).map(d=> d && d.data ? {id:d.id, ...d.data()} : d);
+    renderBeneficios(); renderCalendarPanel();
+  });
+  if(isAdmin()) renderUsuarios();
+}
+async function loadProfileAndStart(user){
+  const {data, error} = await sb.from('profiles').select('nome,role').eq('id', user.id).single();
+  if(error || !data){ document.getElementById('loginErr').textContent = 'Login ok, mas seu perfil não está cadastrado na tabela profiles. Peça para a administradora te adicionar.'; await sb.auth.signOut(); return; }
+  currentUser = {id:user.id, nome:data.nome, role:data.role};
+  startApp();
+}
+document.getElementById('loginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  document.getElementById('loginErr').textContent = '';
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPass').value;
+  const {data, error} = await sb.auth.signInWithPassword({email, password});
+  if(error){ document.getElementById('loginErr').textContent = 'E-mail ou senha inválidos.'; return; }
+  loadProfileAndStart(data.user);
+});
+document.addEventListener('change', e=>{
+  if(e.target.classList.contains('rolesel')){ sb.from('profiles').update({role:e.target.value}).eq('id', e.target.dataset.id); }
+});
+(async function initSession(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session) loadProfileAndStart(session.user);
+})();
+</script>
+</body>
+</html>
